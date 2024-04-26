@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -105,6 +106,35 @@ func Sync() { std.Sync() }
 
 func (l *zapLogger) Sync() {
 	_ = l.z.Sync()
+}
+
+func GetGinLogger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Start timer
+		start := time.Now()
+		path := c.Request.URL.Path
+		raw := c.Request.URL.RawQuery
+
+		// Process request
+		c.Next()
+
+		// Stop timer
+		timeStamp := time.Now()
+		latency := timeStamp.Sub(start)
+
+		clientIP := c.ClientIP()
+		method := c.Request.Method
+		statusCode := c.Writer.Status()
+		errorMessage := c.Errors.ByType(gin.ErrorTypePrivate).String()
+
+		bodySize := c.Writer.Size()
+
+		if raw != "" {
+			path = path + "?" + raw
+		}
+
+		Infow("request:", "path", path, "t", timeStamp, "ip", clientIP, "lat", latency, "m", method, "ret", statusCode, "size", bodySize, "err", errorMessage)
+	}
 }
 
 // Debugw 输出 debug 级别的日志.
