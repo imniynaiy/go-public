@@ -1,6 +1,10 @@
 package log
 
 import (
+	"errors"
+	"log"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -36,6 +40,19 @@ var (
 
 // Init 使用指定的选项初始化 Logger.
 func Init(opts *Options) {
+	for _, path := range opts.OutputPaths {
+		if path == "stdout" || path == "stderr" {
+			continue
+		}
+		if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+			os.MkdirAll(filepath.Dir(path), 0750)
+			_, err := os.Create(path)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	}
+
 	mu.Lock()
 	defer mu.Unlock()
 

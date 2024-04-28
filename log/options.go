@@ -1,6 +1,7 @@
 package log
 
 import (
+	"github.com/spf13/viper"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -27,4 +28,18 @@ func NewOptions() *Options {
 		Format:            "console",
 		OutputPaths:       []string{"stdout"},
 	}
+}
+
+func LogOptions(conf *viper.Viper) *Options {
+	var opts = &Options{
+		DisableCaller:     conf.GetBool("log.disable-caller"),
+		DisableStacktrace: conf.GetBool("log.disable-stacktrace"),
+		Level:             conf.GetString("log.level"),
+		Format:            conf.GetString("log.format"),
+		OutputPaths:       conf.GetStringSlice("log.output-paths"),
+	}
+	if opts.Format == "" {
+		opts.Format = "console"
+	}
+	return opts
 }
